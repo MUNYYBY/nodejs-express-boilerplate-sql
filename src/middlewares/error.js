@@ -1,5 +1,5 @@
-const httpStatus = require('http-status');
-const mongoose = require('mongoose');
+const httpStatus = require('http-status').status;
+const { Prisma } = require('@prisma/client');
 const config = require('../config/config');
 const logger = require('../config/logger');
 const ApiError = require('../utils/ApiError');
@@ -7,8 +7,15 @@ const ApiError = require('../utils/ApiError');
 const errorConverter = (err, req, res, next) => {
   let error = err;
   if (!(error instanceof ApiError)) {
-    const statusCode =
-      error.statusCode || error instanceof mongoose.Error ? httpStatus.BAD_REQUEST : httpStatus.INTERNAL_SERVER_ERROR;
+    let statusCode = httpStatus.INTERNAL_SERVER_ERROR;
+    if (error.statusCode) {
+      statusCode = error.statusCode;
+    } else if (
+      error instanceof Prisma.PrismaClientKnownRequestError ||
+      error instanceof Prisma.PrismaClientValidationError
+    ) {
+      statusCode = httpStatus.BAD_REQUEST;
+    }
     const message = error.message || httpStatus[statusCode];
     error = new ApiError(statusCode, message, false, err.stack);
   }
@@ -17,7 +24,7 @@ const errorConverter = (err, req, res, next) => {
 
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
-  let { statusCode, message } = err;
+  const { statusCode, message } = err;
   // if (config.env === 'production' && !err.isOperational) {
   //   statusCode = httpStatus.INTERNAL_SERVER_ERROR;
   //   message = httpStatus[httpStatus.INTERNAL_SERVER_ERROR];

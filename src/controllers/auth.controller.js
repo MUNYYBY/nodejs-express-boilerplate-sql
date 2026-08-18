@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-const httpStatus = require('http-status');
+const httpStatus = require('http-status').status;
 const catchAsync = require('../utils/catchAsync');
 const { authService, userService, tokenService, emailService } = require('../services');
 
